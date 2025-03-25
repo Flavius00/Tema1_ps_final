@@ -6,7 +6,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
-public class CameraView extends JPanel {
+public class CameraView extends JPanel implements CameraGUI{
     private JTable cameraTable;
     private DefaultTableModel tableModel;
     private JButton addButton, editButton, deleteButton, viewReservationsButton, backButton;

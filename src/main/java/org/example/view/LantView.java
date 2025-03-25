@@ -5,7 +5,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
-public class LantView extends JFrame {
+public class LantView extends JFrame implements LantGUI {
     private JTable tableLanturi;
     private DefaultTableModel tableModel;
     private JButton btnAdauga;

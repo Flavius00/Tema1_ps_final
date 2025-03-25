@@ -6,7 +6,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
-public class HotelView extends JPanel {
+public class HotelView extends JPanel implements HotelGUI {
     private JTable hotelTable;
     private DefaultTableModel tableModel;
     private JButton addButton, editButton, deleteButton, viewCamerasButton, backButton;

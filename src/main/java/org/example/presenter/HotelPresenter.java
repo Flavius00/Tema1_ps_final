@@ -4,6 +4,7 @@ import org.example.model.dao.HotelDAO;
 import org.example.model.dao.LantDAO;
 import org.example.model.dao.LocatieDAO;
 import org.example.model.entities.Hotel;
+import org.example.view.HotelGUI;
 import org.example.view.HotelView;
 import org.example.view.MainView;
 
@@ -12,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class HotelPresenter {
-    private HotelView view;
+    private  HotelGUI view;
     private HotelDAO hotelDAO;
     private LocatieDAO locatieDAO;
     private LantDAO lantDAO;
@@ -24,7 +25,7 @@ public class HotelPresenter {
     private Map<String, Integer> locatieIdMap = new HashMap<>();
     private int currentHotelId = -1;
 
-    public HotelPresenter(HotelView view, HotelDAO hotelDAO, LocatieDAO locatieDAO, LantDAO lantDAO, MainView mainView) {
+    public HotelPresenter(HotelGUI view, HotelDAO hotelDAO, LocatieDAO locatieDAO, LantDAO lantDAO, MainView mainView) {
         this.view = view;
         this.hotelDAO = hotelDAO;
         this.locatieDAO = locatieDAO;

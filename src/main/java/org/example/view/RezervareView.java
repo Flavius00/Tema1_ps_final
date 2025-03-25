@@ -6,7 +6,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
-public class RezervareView extends JPanel {
+public class RezervareView extends JPanel implements RezervareGUI {
     private JTable rezervareTable;
     private DefaultTableModel tableModel;
     private JButton addButton, editButton, deleteButton, backButton;

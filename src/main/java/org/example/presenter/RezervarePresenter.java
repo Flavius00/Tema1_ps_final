@@ -3,6 +3,7 @@ package org.example.presenter;
 import org.example.model.dao.RezervareDAO;
 import org.example.model.entities.Rezervare;
 import org.example.view.MainView;
+import org.example.view.RezervareGUI;
 import org.example.view.RezervareView;
 
 import java.awt.event.ActionEvent;
@@ -13,7 +14,7 @@ import java.time.format.DateTimeParseException;
 import javax.swing.event.ListSelectionEvent;
 
 public class RezervarePresenter {
-    private RezervareView view;
+    private  RezervareGUI view;
     private RezervareDAO rezervareDAO;
     private MainView mainView;
     // Format de dată modificat - fără oră
@@ -22,7 +23,7 @@ public class RezervarePresenter {
     private String currentCameraInfo = "";
     private int currentRezervareId = -1;
 
-    public RezervarePresenter(RezervareView view, RezervareDAO rezervareDAO, MainView mainView) {
+    public RezervarePresenter(RezervareGUI view, RezervareDAO rezervareDAO, MainView mainView) {
         this.view = view;
         this.rezervareDAO = rezervareDAO;
         this.mainView = mainView;

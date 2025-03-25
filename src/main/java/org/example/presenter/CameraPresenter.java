@@ -4,6 +4,7 @@ import org.example.model.dao.CameraDAO;
 import org.example.model.dao.RezervareDAO;
 import org.example.model.entities.Camera;
 import org.example.util.ExportUtil;
+import org.example.view.CameraGUI;
 import org.example.view.CameraView;
 import org.example.view.MainView;
 
@@ -15,7 +16,7 @@ import java.time.format.DateTimeParseException;
 import javax.swing.event.ListSelectionEvent;
 
 public class CameraPresenter {
-    private CameraView view;
+    private  CameraGUI view;
     private CameraDAO cameraDAO;
     private RezervareDAO rezervareDAO;
     private MainView mainView;
@@ -29,7 +30,7 @@ public class CameraPresenter {
     // Field to store the last applied filter type
     private String lastFilterType = "";
 
-    public CameraPresenter(CameraView view, CameraDAO cameraDAO, RezervareDAO rezervareDAO, MainView mainView) {
+    public CameraPresenter(CameraGUI view, CameraDAO cameraDAO, RezervareDAO rezervareDAO, MainView mainView) {
         this.view = view;
         this.cameraDAO = cameraDAO;
         this.rezervareDAO = rezervareDAO;

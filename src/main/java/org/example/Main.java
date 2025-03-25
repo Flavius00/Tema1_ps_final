@@ -22,10 +22,10 @@ public class Main {
         RezervareDAO rezervareDAO = new RezervareDAO();
 
         // Create views
-        LantView lantView = new LantView();
-        HotelView hotelView = new HotelView();
-        CameraView cameraView = new CameraView();
-        RezervareView rezervareView = new RezervareView();
+        LantGUI lantView = new LantView();
+        HotelGUI hotelView = new HotelView();
+        CameraGUI cameraView = new CameraView();
+        RezervareGUI rezervareView = new RezervareView();
 
         // Create presenters
         LantPresenter lantPresenter = new LantPresenter(lantView, lantDAO, mainView);

@@ -2,20 +2,20 @@ package org.example.presenter;
 
 import org.example.model.dao.LantDAO;
 import org.example.model.entities.Lant;
-import org.example.view.LantView;
+import org.example.view.LantGUI;
 import org.example.view.MainView;
 
 import java.awt.event.ActionEvent;
 
 public class LantPresenter {
-    private LantView view;
+    private  LantGUI view;
     private LantDAO lantDAO;
     private MainView mainView;
     private int currentLantId = -1;
     private boolean isEditMode = false;
     private HotelPresenter hotelPresenter; // Added reference to HotelPresenter
 
-    public LantPresenter(LantView view, LantDAO lantDAO, MainView mainView) {
+    public LantPresenter(LantGUI view, LantDAO lantDAO, MainView mainView) {
         this.view = view;
         this.lantDAO = lantDAO;
         this.mainView = mainView;
