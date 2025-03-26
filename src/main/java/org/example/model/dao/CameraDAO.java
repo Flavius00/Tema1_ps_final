@@ -40,7 +40,7 @@ public class CameraDAO {
 
     public Object[][] getCamereAsObjects(int hotelId) {
         List<Camera> camere = findByHotelId(hotelId);
-        Object[][] result = new Object[camere.size()][4]; // id, nrCamera, pretPerNoapte, disponibil
+        Object[][] result = new Object[camere.size()][4];
 
         for (int i = 0; i < camere.size(); i++) {
             Camera camera = camere.get(i);
@@ -48,7 +48,6 @@ public class CameraDAO {
             result[i][1] = camera.getNrCamera();
             result[i][2] = camera.getPretPerNoapte();
 
-            // Check availability - default is true, will be updated by presenter
             result[i][3] = true;
         }
 
@@ -171,7 +170,6 @@ public class CameraDAO {
     }
 
     public boolean delete(int id) {
-        // Delete associated reservations first
         String sqlDeleteRezervari = "DELETE FROM rezervari WHERE id_camera = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sqlDeleteRezervari)) {
@@ -182,7 +180,6 @@ public class CameraDAO {
             return false;
         }
 
-        // Then delete the camera
         String sql = "DELETE FROM camera WHERE id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -195,8 +192,6 @@ public class CameraDAO {
             return false;
         }
     }
-
-    // Add filtering methods
 
     public List<Camera> filterByPriceRange(int hotelId, float minPrice, float maxPrice) {
         List<Camera> camere = new ArrayList<>();
@@ -235,17 +230,15 @@ public class CameraDAO {
             result[i][0] = camera.getId();
             result[i][1] = camera.getNrCamera();
             result[i][2] = camera.getPretPerNoapte();
-            result[i][3] = true; // Default is available, will be updated by presenter
+            result[i][3] = true;
         }
 
         return result;
     }
 
-    // Filter rooms by availability on a specific date
     public List<Camera> filterByAvailability(int hotelId, LocalDateTime checkInDate, LocalDateTime checkOutDate) {
         List<Camera> camere = new ArrayList<>();
 
-        // First get all rooms for the hotel that are not reserved during the specified period
         String sql = "SELECT c.* FROM camera c " +
                 "WHERE c.id_hotel = ? AND c.id NOT IN (" +
                 "SELECT r.id_camera FROM rezervari r " +
@@ -285,13 +278,12 @@ public class CameraDAO {
             result[i][0] = camera.getId();
             result[i][1] = camera.getNrCamera();
             result[i][2] = camera.getPretPerNoapte();
-            result[i][3] = true; // All cameras in result are available
+            result[i][3] = true;
         }
 
         return result;
     }
 
-    // Filter rooms by facilities (search in hotel facilities)
     public List<Camera> filterByFacilities(int hotelId, String facilitiesKeyword) {
         List<Camera> camere = new ArrayList<>();
         String sql = "SELECT c.* FROM camera c " +
@@ -329,7 +321,7 @@ public class CameraDAO {
             result[i][0] = camera.getId();
             result[i][1] = camera.getNrCamera();
             result[i][2] = camera.getPretPerNoapte();
-            result[i][3] = true; // Default is available, will be updated by presenter
+            result[i][3] = true;
         }
 
         return result;

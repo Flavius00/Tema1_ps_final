@@ -20,7 +20,6 @@ public class ExportUtil {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Salvare fișier CSV");
 
-        // Set default file name
         String defaultFileName = filePrefix + "_" + hotelName.replaceAll("\\s+", "_") + "_" + dateString.replaceAll("[\\s:]+", "_") + ".csv";
         fileChooser.setSelectedFile(new File(defaultFileName));
 
@@ -32,13 +31,11 @@ public class ExportUtil {
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File fileToSave = fileChooser.getSelectedFile();
 
-            // Add .csv extension if not present
             if (!fileToSave.getName().toLowerCase().endsWith(".csv")) {
                 fileToSave = new File(fileToSave.getParentFile(), fileToSave.getName() + ".csv");
             }
 
             try (FileWriter writer = new FileWriter(fileToSave)) {
-                // Write CSV header
                 for (int i = 0; i < headers.length; i++) {
                     writer.append(headers[i]);
                     if (i < headers.length - 1) {
@@ -47,11 +44,9 @@ public class ExportUtil {
                 }
                 writer.append("\n");
 
-                // Write data rows
                 for (Object[] row : data) {
                     for (int i = 0; i < row.length; i++) {
                         String value = row[i] != null ? row[i].toString() : "";
-                        // Escape commas in values
                         if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
                             writer.append("\"").append(value.replace("\"", "\"\"")).append("\"");
                         } else {
@@ -78,7 +73,6 @@ public class ExportUtil {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Salvare fișier DOC");
 
-        // Set default file name
         String defaultFileName = filePrefix + "_" + hotelName.replaceAll("\\s+", "_") + "_" + dateString.replaceAll("[\\s:]+", "_") + ".docx";
         fileChooser.setSelectedFile(new File(defaultFileName));
 
@@ -90,7 +84,6 @@ public class ExportUtil {
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File fileToSave = fileChooser.getSelectedFile();
 
-            // Add .docx extension if not present
             if (!fileToSave.getName().toLowerCase().endsWith(".docx")) {
                 fileToSave = new File(fileToSave.getParentFile(), fileToSave.getName() + ".docx");
             }
@@ -98,20 +91,16 @@ public class ExportUtil {
             try (XWPFDocument document = new XWPFDocument();
                  FileOutputStream out = new FileOutputStream(fileToSave)) {
 
-                // Add title
                 XWPFParagraph titleParagraph = document.createParagraph();
                 XWPFRun titleRun = titleParagraph.createRun();
                 titleRun.setText(title);
                 titleRun.setBold(true);
                 titleRun.setFontSize(16);
 
-                // Add a blank line
                 document.createParagraph();
 
-                // Create table
                 XWPFTable table = document.createTable();
 
-                // Create header row
                 XWPFTableRow headerRow = table.getRow(0);
                 for (int i = 0; i < headers.length; i++) {
                     if (i == 0) {
@@ -121,7 +110,6 @@ public class ExportUtil {
                     }
                 }
 
-                // Add data rows
                 for (Object[] row : data) {
                     XWPFTableRow dataRow = table.createRow();
                     for (int i = 0; i < row.length; i++) {
@@ -129,7 +117,6 @@ public class ExportUtil {
                     }
                 }
 
-                // Write document to file
                 document.write(out);
 
                 return true;

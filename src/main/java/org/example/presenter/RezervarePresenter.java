@@ -4,20 +4,22 @@ import org.example.model.dao.RezervareDAO;
 import org.example.model.entities.Rezervare;
 import org.example.view.MainView;
 import org.example.view.RezervareGUI;
-import org.example.view.RezervareView;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import javax.swing.JOptionPane;
 import javax.swing.event.ListSelectionEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RezervarePresenter {
-    private  RezervareGUI view;
+    private RezervareGUI view;
     private RezervareDAO rezervareDAO;
     private MainView mainView;
-    // Format de dată modificat - fără oră
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private int currentCameraId = -1;
     private String currentCameraInfo = "";
@@ -28,42 +30,59 @@ public class RezervarePresenter {
         this.rezervareDAO = rezervareDAO;
         this.mainView = mainView;
 
-        // Set up listeners
-        view.addAddButtonListener(this::addRezervare);
-        view.addEditButtonListener(this::editRezervare);
-        view.addDeleteButtonListener(this::deleteRezervare);
-        view.addBackButtonListener(this::backToCameras);
+        Map<String, ActionListener> listeners = new HashMap<>();
+        listeners.put("add", this::addRezervare);
+        listeners.put("edit", this::editRezervare);
+        listeners.put("delete", this::deleteRezervare);
+        listeners.put("back", this::backToCameras);
 
-        // Add table selection listener
-        view.addTableSelectionListener(this::handleTableSelection);
+        view.registerEventHandlers(this::handleTableSelection, listeners);
 
-        // Set initial button state
         updateButtonState(false);
+    }
+
+    private int showDialog(int dialogType, String message, Object initialValue) {
+        switch (dialogType) {
+            case JOptionPane.QUESTION_MESSAGE:
+                view.displayDialog(dialogType, message, initialValue);
+                return JOptionPane.YES_OPTION;
+
+            case JOptionPane.PLAIN_MESSAGE:
+                if (initialValue != null) {
+                    view.displayDialog(dialogType, message, initialValue);
+                    return 0;
+                }
+                break;
+
+            default:
+                view.displayDialog(dialogType, message, null);
+                return -1;
+        }
+        return -1;
     }
 
     private void handleTableSelection(ListSelectionEvent e) {
         if (!e.getValueIsAdjusting()) {
-            int selectedRow = view.getSelectedRow();
-            if (selectedRow != -1) {
-                // Get rezervare ID and populate form
-                currentRezervareId = (int) view.getValueAt(selectedRow, 0);
+            Object[] rowData = view.getTableSelection();
+            if (rowData != null) {
+                currentRezervareId = (int) rowData[0];
 
-                // Enable edit and delete buttons
                 updateButtonState(true);
 
-                // Populate form fields
                 Rezervare rezervare = rezervareDAO.findById(currentRezervareId);
                 if (rezervare != null) {
-                    // Convertim LocalDateTime la LocalDate
                     LocalDate startDate = rezervare.getStartDate().toLocalDate();
                     LocalDate endDate = rezervare.getEndDate().toLocalDate();
 
-                    view.setStartDate(startDate.format(dateFormatter));
-                    view.setEndDate(endDate.format(dateFormatter));
-                    view.setNumeClient(rezervare.getNumeClient());
-                    view.setPrenumeClient(rezervare.getPrenumeClient());
-                    view.setTelefonClient(rezervare.getTelefonClient());
-                    view.setEmailClient(rezervare.getEmailClient());
+                    view.setFormData(new Object[] {
+                            startDate.format(dateFormatter),
+                            endDate.format(dateFormatter),
+                            rezervare.getNumeClient(),
+                            rezervare.getPrenumeClient(),
+                            rezervare.getTelefonClient(),
+                            rezervare.getEmailClient(),
+                            false
+                    });
                 }
             } else {
                 updateButtonState(false);
@@ -73,125 +92,137 @@ public class RezervarePresenter {
     }
 
     private void updateButtonState(boolean rowSelected) {
-        view.setButtonsEnabled(true, rowSelected, rowSelected);
+        boolean[] buttonStates = {
+                true,
+                rowSelected,
+                rowSelected
+        };
+        view.updateComponents(null, null, buttonStates);
     }
 
     public void setCurrentCamera(int cameraId, String cameraInfo) {
         this.currentCameraId = cameraId;
         this.currentCameraInfo = cameraInfo;
-        view.setCameraInfo(cameraInfo);
+        view.updateComponents(cameraInfo, null, null);
         loadRezervari();
 
-        // Reset selection
         currentRezervareId = -1;
-        view.clearForm();
-        updateButtonState(false);
 
-        // Populăm formul cu valori implicite
-        view.setStartDate(LocalDate.now().format(dateFormatter));
-        view.setEndDate(LocalDate.now().plusDays(1).format(dateFormatter));
+        LocalDate today = LocalDate.now();
+        view.setFormData(new Object[] {
+                today.format(dateFormatter),
+                today.plusDays(1).format(dateFormatter),
+                "",
+                "",
+                "",
+                "",
+                true
+        });
+
+        updateButtonState(false);
     }
 
     private void loadRezervari() {
         if (currentCameraId > 0) {
             Object[][] rezervari = rezervareDAO.getRezervariAsObjects(currentCameraId);
-            view.populateRezervareTable(rezervari);
+            view.updateComponents(null, rezervari, null);
         }
     }
 
     private void addRezervare(ActionEvent e) {
-        // Clear form for new reservation
         if (validateAndSaveRezervare()) {
             loadRezervari();
         }
-        view.clearForm();
+
+        LocalDate today = LocalDate.now();
+        view.setFormData(new Object[] {
+                today.format(dateFormatter),
+                today.plusDays(1).format(dateFormatter),
+                "",
+                "",
+                "",
+                "",
+                true
+        });
+
         currentRezervareId = -1;
-
-        // Setăm valori implicite pentru datele de început și sfârșit
-        view.setStartDate(LocalDate.now().format(dateFormatter));
-        view.setEndDate(LocalDate.now().plusDays(1).format(dateFormatter));
-
     }
 
     private void editRezervare(ActionEvent e) {
-        int selectedRow = view.getSelectedRow();
-        if (selectedRow == -1) {
-            view.showMessage("Selectați o rezervare pentru a o modifica!");
+        Object[] rowData = view.getTableSelection();
+        if (rowData == null) {
+            showDialog(JOptionPane.ERROR_MESSAGE, "Selectați o rezervare pentru a o modifica!", null);
             return;
         }
 
-        // Form is already populated by selection handler
         if (validateAndSaveRezervare()) {
             loadRezervari();
         }
     }
 
     private boolean validateAndSaveRezervare() {
-        // Get all form data
-        String startDateStr = view.getStartDate();
-        String endDateStr = view.getEndDate();
-        String numeClient = view.getNumeClient();
-        String prenumeClient = view.getPrenumeClient();
-        String telefonClient = view.getTelefonClient();
-        String emailClient = view.getEmailClient();
+        Object[] formValues = view.getFormData();
+        if (formValues.length < 6) {
+            showDialog(JOptionPane.ERROR_MESSAGE, "Date de formular incomplete!", null);
+            return false;
+        }
 
-        // Validate required fields
+        String startDateStr = (String) formValues[0];
+        String endDateStr = (String) formValues[1];
+        String numeClient = (String) formValues[2];
+        String prenumeClient = (String) formValues[3];
+        String telefonClient = (String) formValues[4];
+        String emailClient = (String) formValues[5];
+
         if (startDateStr == null || startDateStr.trim().isEmpty()) {
-            view.showMessage("Data de început nu poate fi goală!");
+            showDialog(JOptionPane.ERROR_MESSAGE, "Data de început nu poate fi goală!", null);
             return false;
         }
 
         if (endDateStr == null || endDateStr.trim().isEmpty()) {
-            view.showMessage("Data de sfârșit nu poate fi goală!");
+            showDialog(JOptionPane.ERROR_MESSAGE, "Data de sfârșit nu poate fi goală!", null);
             return false;
         }
 
         if (numeClient == null || numeClient.trim().isEmpty()) {
-            view.showMessage("Numele clientului nu poate fi gol!");
+            showDialog(JOptionPane.ERROR_MESSAGE, "Numele clientului nu poate fi gol!", null);
             return false;
         }
 
         if (telefonClient == null || telefonClient.trim().isEmpty()) {
-            view.showMessage("Telefonul clientului nu poate fi gol!");
+            showDialog(JOptionPane.ERROR_MESSAGE, "Telefonul clientului nu poate fi gol!", null);
             return false;
         }
 
-        // Ne asigurăm că prenumeClient și emailClient nu sunt null
         prenumeClient = (prenumeClient != null) ? prenumeClient : "";
         emailClient = (emailClient != null) ? emailClient : "";
 
-        // Parse and validate dates
         LocalDateTime startDate, endDate;
         try {
-            // Convertim din LocalDate în LocalDateTime pentru a folosi DAO-urile existente
             LocalDate startLocalDate = LocalDate.parse(startDateStr, dateFormatter);
             LocalDate endLocalDate = LocalDate.parse(endDateStr, dateFormatter);
 
-            // Transformăm în LocalDateTime (începutul zilei)
             startDate = startLocalDate.atStartOfDay();
             endDate = endLocalDate.atStartOfDay();
 
             if (endDate.isBefore(startDate)) {
-                view.showMessage("Data de sfârșit nu poate fi înainte de data de început!");
+                showDialog(JOptionPane.ERROR_MESSAGE, "Data de sfârșit nu poate fi înainte de data de început!", null);
                 return false;
             }
 
             if (startDate.isBefore(LocalDateTime.now())) {
-                view.showMessage("Data de început nu poate fi în trecut!");
+                showDialog(JOptionPane.ERROR_MESSAGE, "Data de început nu poate fi în trecut!", null);
                 return false;
             }
         } catch (DateTimeParseException ex) {
-            view.showMessage("Format dată invalid! Folosiți formatul yyyy-MM-dd.");
+            showDialog(JOptionPane.ERROR_MESSAGE, "Format dată invalid! Folosiți formatul yyyy-MM-dd.", null);
             return false;
         }
 
-        // Check for availability (only when adding or changing dates)
         boolean needToCheckAvailability = currentRezervareId == -1;
         if (currentRezervareId != -1) {
-            // For existing reservation, get original dates
             Rezervare existingRezervare = rezervareDAO.findById(currentRezervareId);
             if (existingRezervare != null) {
-                // Only check availability if dates changed
                 if (!startDate.toLocalDate().equals(existingRezervare.getStartDate().toLocalDate()) ||
                         !endDate.toLocalDate().equals(existingRezervare.getEndDate().toLocalDate())) {
                     needToCheckAvailability = true;
@@ -200,42 +231,30 @@ public class RezervarePresenter {
         }
 
         if (needToCheckAvailability) {
-            // Check if room is available for these dates
             boolean isAvailable = rezervareDAO.isCameraDisponibila(currentCameraId, startDate, endDate);
             if (!isAvailable) {
-                view.showMessage("Camera nu este disponibilă în perioada selectată!");
+                showDialog(JOptionPane.ERROR_MESSAGE, "Camera nu este disponibilă în perioada selectată!", null);
                 return false;
             }
         }
 
-        // Save or update reservation
         boolean success;
         if (currentRezervareId == -1) {
-            // Add new reservation
             success = rezervareDAO.save(startDateStr, endDateStr, currentCameraId,
                     numeClient, prenumeClient, telefonClient, emailClient);
             if (success) {
-                view.showMessage("Rezervare adăugată cu succes!");
-                view.clearForm();
-                // Resetăm datele implicite
-                view.setStartDate(LocalDate.now().format(dateFormatter));
-                view.setEndDate(LocalDate.now().plusDays(1).format(dateFormatter));
+                showDialog(JOptionPane.INFORMATION_MESSAGE, "Rezervare adăugată cu succes!", null);
             } else {
-                view.showMessage("Eroare la adăugarea rezervării!");
+                showDialog(JOptionPane.ERROR_MESSAGE, "Eroare la adăugarea rezervării!", null);
             }
         } else {
-            // Update existing reservation
             success = rezervareDAO.update(currentRezervareId, startDateStr, endDateStr, currentCameraId,
                     numeClient, prenumeClient, telefonClient, emailClient);
             if (success) {
-                view.showMessage("Rezervare actualizată cu succes!");
-                view.clearForm();
+                showDialog(JOptionPane.INFORMATION_MESSAGE, "Rezervare actualizată cu succes!", null);
                 currentRezervareId = -1;
-                // Resetăm datele implicite
-                view.setStartDate(LocalDate.now().format(dateFormatter));
-                view.setEndDate(LocalDate.now().plusDays(1).format(dateFormatter));
             } else {
-                view.showMessage("Eroare la actualizarea rezervării!");
+                showDialog(JOptionPane.ERROR_MESSAGE, "Eroare la actualizarea rezervării!", null);
             }
         }
 
@@ -243,28 +262,36 @@ public class RezervarePresenter {
     }
 
     private void deleteRezervare(ActionEvent e) {
-        int selectedRow = view.getSelectedRow();
-        if (selectedRow == -1) {
-            view.showMessage("Selectați o rezervare pentru a o șterge!");
+        Object[] rowData = view.getTableSelection();
+        if (rowData == null) {
+            showDialog(JOptionPane.ERROR_MESSAGE, "Selectați o rezervare pentru a o șterge!", null);
             return;
         }
 
-        int rezervareId = (int) view.getValueAt(selectedRow, 0);
+        int rezervareId = (int) rowData[0];
 
-        int confirmResult = view.showConfirmDialog("Sigur doriți să ștergeți această rezervare?");
-        if (confirmResult == 0) { // Yes option
+        int confirmResult = showDialog(JOptionPane.QUESTION_MESSAGE, "Sigur doriți să ștergeți această rezervare?", null);
+        if (confirmResult == JOptionPane.YES_OPTION) {
             boolean success = rezervareDAO.delete(rezervareId);
             if (success) {
-                view.showMessage("Rezervare ștearsă cu succes!");
-                view.clearForm();
+                showDialog(JOptionPane.INFORMATION_MESSAGE, "Rezervare ștearsă cu succes!", null);
+
+                LocalDate today = LocalDate.now();
+                view.setFormData(new Object[] {
+                        today.format(dateFormatter),
+                        today.plusDays(1).format(dateFormatter),
+                        "",
+                        "",
+                        "",
+                        "",
+                        true
+                });
+
                 loadRezervari();
                 currentRezervareId = -1;
                 updateButtonState(false);
-                // Resetăm datele implicite
-                view.setStartDate(LocalDate.now().format(dateFormatter));
-                view.setEndDate(LocalDate.now().plusDays(1).format(dateFormatter));
             } else {
-                view.showMessage("Eroare la ștergerea rezervării!");
+                showDialog(JOptionPane.ERROR_MESSAGE, "Eroare la ștergerea rezervării!", null);
             }
         }
     }

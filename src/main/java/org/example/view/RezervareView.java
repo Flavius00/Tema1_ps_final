@@ -5,6 +5,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RezervareView extends JPanel implements RezervareGUI {
     private JTable rezervareTable;
@@ -15,17 +17,17 @@ public class RezervareView extends JPanel implements RezervareGUI {
     private JPanel formPanel;
     private JPanel buttonPanel;
 
+    private Map<String, JButton> buttonMap;
+
     public RezervareView() {
         setLayout(new BorderLayout());
 
-        // Create camera info panel
         JPanel cameraInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         cameraInfoPanel.add(new JLabel("Camera: "));
         cameraInfoLabel = new JLabel();
         cameraInfoPanel.add(cameraInfoLabel);
         add(cameraInfoPanel, BorderLayout.NORTH);
 
-        // Create table
         String[] columnNames = {"ID", "Data de început", "Data de sfârșit", "Nume Client", "Telefon Client"};
         tableModel = new DefaultTableModel(columnNames, 0);
         rezervareTable = new JTable(tableModel);
@@ -33,11 +35,9 @@ public class RezervareView extends JPanel implements RezervareGUI {
         JScrollPane scrollPane = new JScrollPane(rezervareTable);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Create form panel
         formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Modificat să afișeze noul format de dată
         formPanel.add(new JLabel("Data de început (yyyy-MM-dd):"));
         startDateField = new JTextField(20);
         formPanel.add(startDateField);
@@ -62,7 +62,6 @@ public class RezervareView extends JPanel implements RezervareGUI {
         emailClientField = new JTextField(20);
         formPanel.add(emailClientField);
 
-        // Create button panel
         buttonPanel = new JPanel(new FlowLayout());
 
         addButton = new JButton("Adaugă");
@@ -80,126 +79,104 @@ public class RezervareView extends JPanel implements RezervareGUI {
         southPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(southPanel, BorderLayout.SOUTH);
+
+        buttonMap = new HashMap<>();
+        buttonMap.put("add", addButton);
+        buttonMap.put("edit", editButton);
+        buttonMap.put("delete", deleteButton);
+        buttonMap.put("back", backButton);
     }
 
-    // Methods without logic
+    @Override
+    public void updateComponents(String cameraInfo, Object[][] tableData, boolean[] buttonStates) {
+        if (cameraInfo != null) {
+            cameraInfoLabel.setText(cameraInfo);
+        }
 
-    public void setButtonsEnabled(boolean add, boolean edit, boolean delete) {
-        addButton.setEnabled(add);
-        editButton.setEnabled(edit);
-        deleteButton.setEnabled(delete);
-    }
+        if (tableData != null) {
+            tableModel.setRowCount(0);
+            for (Object[] row : tableData) {
+                tableModel.addRow(row);
+            }
+        }
 
-    public void addTableSelectionListener(ListSelectionListener listener) {
-        rezervareTable.getSelectionModel().addListSelectionListener(listener);
-    }
-
-    public void setCameraInfo(String cameraInfo) {
-        cameraInfoLabel.setText(cameraInfo);
-    }
-
-    public int getSelectedRow() {
-        return rezervareTable.getSelectedRow();
-    }
-
-    public Object getValueAt(int row, int column) {
-        return tableModel.getValueAt(row, column);
-    }
-
-    public void populateRezervareTable(Object[][] rezervari) {
-        tableModel.setRowCount(0);
-        for (Object[] rezervare : rezervari) {
-            tableModel.addRow(rezervare);
+        if (buttonStates != null && buttonStates.length >= 3) {
+            addButton.setEnabled(buttonStates[0]);
+            editButton.setEnabled(buttonStates[1]);
+            deleteButton.setEnabled(buttonStates[2]);
         }
     }
 
-    // Getters for all form fields
-    public String getStartDate() {
-        return startDateField.getText();
+    @Override
+    public Object[] getFormData() {
+        return new Object[] {
+                startDateField.getText(),
+                endDateField.getText(),
+                numeClientField.getText(),
+                prenumeClientField.getText(),
+                telefonClientField.getText(),
+                emailClientField.getText()
+        };
     }
 
-    public String getEndDate() {
-        return endDateField.getText();
+    @Override
+    public void setFormData(Object[] formData) {
+        if (formData == null) return;
+
+        if (formData.length > 0 && formData[0] != null) startDateField.setText(formData[0].toString());
+        if (formData.length > 1 && formData[1] != null) endDateField.setText(formData[1].toString());
+        if (formData.length > 2 && formData[2] != null) numeClientField.setText(formData[2].toString());
+        if (formData.length > 3 && formData[3] != null) prenumeClientField.setText(formData[3].toString());
+        if (formData.length > 4 && formData[4] != null) telefonClientField.setText(formData[4].toString());
+        if (formData.length > 5 && formData[5] != null) emailClientField.setText(formData[5].toString());
+
+        if (formData.length > 6 && formData[6] instanceof Boolean && (Boolean)formData[6]) {
+            startDateField.setText("");
+            endDateField.setText("");
+            numeClientField.setText("");
+            prenumeClientField.setText("");
+            telefonClientField.setText("");
+            emailClientField.setText("");
+        }
     }
 
-    public String getNumeClient() {
-        return numeClientField.getText();
+    @Override
+    public Object[] getTableSelection() {
+        int selectedRow = rezervareTable.getSelectedRow();
+        if (selectedRow == -1) {
+            return null;
+        }
+
+        Object[] rowData = new Object[tableModel.getColumnCount()];
+        for (int i = 0; i < rowData.length; i++) {
+            rowData[i] = tableModel.getValueAt(selectedRow, i);
+        }
+
+        return rowData;
     }
 
-    public String getPrenumeClient() {
-        return prenumeClientField.getText();
+    @Override
+    public void registerEventHandlers(ListSelectionListener tableListener, Map<String, ActionListener> actionListeners) {
+        rezervareTable.getSelectionModel().addListSelectionListener(tableListener);
+
+        if (actionListeners != null) {
+            for (Map.Entry<String, ActionListener> entry : actionListeners.entrySet()) {
+                JButton button = buttonMap.get(entry.getKey());
+                if (button != null) {
+                    button.addActionListener(entry.getValue());
+                }
+            }
+        }
     }
 
-    public String getTelefonClient() {
-        return telefonClientField.getText();
-    }
-
-    public String getEmailClient() {
-        return emailClientField.getText();
-    }
-
-    // Setters for all form fields
-    public void setStartDate(String startDate) {
-        startDateField.setText(startDate);
-    }
-
-    public void setEndDate(String endDate) {
-        endDateField.setText(endDate);
-    }
-
-    public void setNumeClient(String numeClient) {
-        numeClientField.setText(numeClient);
-    }
-
-    public void setPrenumeClient(String prenumeClient) {
-        prenumeClientField.setText(prenumeClient);
-    }
-
-    public void setTelefonClient(String telefonClient) {
-        telefonClientField.setText(telefonClient);
-    }
-
-    public void setEmailClient(String emailClient) {
-        emailClientField.setText(emailClient);
-    }
-
-    public void clearForm() {
-        startDateField.setText("");
-        endDateField.setText("");
-        numeClientField.setText("");
-        prenumeClientField.setText("");
-        telefonClientField.setText("");
-        emailClientField.setText("");
-    }
-
-    // Action listeners
-    public void addAddButtonListener(ActionListener listener) {
-        addButton.addActionListener(listener);
-    }
-
-    public void addEditButtonListener(ActionListener listener) {
-        editButton.addActionListener(listener);
-    }
-
-    public void addDeleteButtonListener(ActionListener listener) {
-        deleteButton.addActionListener(listener);
-    }
-
-    public void addBackButtonListener(ActionListener listener) {
-        backButton.addActionListener(listener);
-    }
-
-    public void showMessage(String message) {
-        JOptionPane.showMessageDialog(this, message);
-    }
-
-    public int showConfirmDialog(String message) {
-        return JOptionPane.showConfirmDialog(
-                this,
-                message,
-                "Confirmare",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-        );
+    @Override
+    public void displayDialog(int dialogType, String message, Object initialValue) {
+        if (dialogType == JOptionPane.QUESTION_MESSAGE) {
+            JOptionPane.showConfirmDialog(this, message, "Confirmare", JOptionPane.YES_NO_OPTION, dialogType);
+        } else if (dialogType == JOptionPane.PLAIN_MESSAGE && initialValue != null) {
+            JOptionPane.showInputDialog(this, message, initialValue);
+        } else {
+            JOptionPane.showMessageDialog(this, message);
+        }
     }
 }

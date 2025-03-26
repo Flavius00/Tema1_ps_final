@@ -59,7 +59,7 @@ public class HotelDAO {
             result[i][4] = hotel.getEmail();
             result[i][5] = hotel.getFacilitati();
 
-            // Get lant name
+
             try {
                 result[i][6] = lantDAO.findById(hotel.getIdLant()).getNume();
             } catch (Exception e) {
@@ -204,7 +204,6 @@ public class HotelDAO {
     }
 
     public boolean delete(int id) {
-        // Mai întâi trebuie să ștergem toate camerele asociate acestui hotel
         String sqlDeleteCamere = "DELETE FROM camera WHERE id_hotel = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sqlDeleteCamere)) {
@@ -215,7 +214,6 @@ public class HotelDAO {
             return false;
         }
 
-        // Apoi putem șterge hotelul
         String sql = "DELETE FROM hotel WHERE id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {

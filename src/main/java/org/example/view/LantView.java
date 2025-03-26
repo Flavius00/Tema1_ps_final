@@ -4,6 +4,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LantView extends JFrame implements LantGUI {
     private JTable tableLanturi;
@@ -12,16 +14,24 @@ public class LantView extends JFrame implements LantGUI {
     private JButton btnEditare;
     private JButton btnStergere;
     private JButton btnInapoi;
-
-    // Pentru operații de adăugare/editare
     private JTextField txtNume;
     private JButton btnSalveaza;
     private JButton btnAnuleaza;
     private JPanel panelForm;
     private JPanel panelButtons;
 
+    private Map<String, JButton> buttonMap;
+
     public LantView() {
         initComponents();
+
+        buttonMap = new HashMap<>();
+        buttonMap.put("add", btnAdauga);
+        buttonMap.put("edit", btnEditare);
+        buttonMap.put("delete", btnStergere);
+        buttonMap.put("back", btnInapoi);
+        buttonMap.put("save", btnSalveaza);
+        buttonMap.put("cancel", btnAnuleaza);
     }
 
     private void initComponents() {
@@ -30,7 +40,6 @@ public class LantView extends JFrame implements LantGUI {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Creăm modelul de tabel
         String[] columnNames = {"ID", "Nume"};
         tableModel = new DefaultTableModel(columnNames, 0);
 
@@ -40,7 +49,6 @@ public class LantView extends JFrame implements LantGUI {
 
         JScrollPane scrollPane = new JScrollPane(tableLanturi);
 
-        // Creăm panoul pentru butoane
         panelButtons = new JPanel();
         btnAdauga = new JButton("Adaugă");
         btnEditare = new JButton("Editare");
@@ -52,7 +60,6 @@ public class LantView extends JFrame implements LantGUI {
         panelButtons.add(btnStergere);
         panelButtons.add(btnInapoi);
 
-        // Creăm formularul pentru adăugare/editare
         panelForm = new JPanel(new GridLayout(3, 2, 10, 10));
         panelForm.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -70,86 +77,79 @@ public class LantView extends JFrame implements LantGUI {
         panelForm.add(new JLabel(""));
         panelForm.add(btnPanel);
 
-        // Adăugăm componentele la frame
         setLayout(new BorderLayout());
         add(scrollPane, BorderLayout.CENTER);
         add(panelButtons, BorderLayout.SOUTH);
 
-        // Inițial formularul nu e vizibil
         panelForm.setVisible(false);
     }
 
-    // Methods without logic
+    @Override
+    public void updateComponents(Object[][] tableData, boolean showForm, String nume) {
+        if (tableData != null) {
+            tableModel.setRowCount(0);
+            for (Object[] row : tableData) {
+                tableModel.addRow(row);
+            }
+        }
 
-    public void afiseazaFormular() {
-        remove(panelButtons);
-        add(panelForm, BorderLayout.SOUTH);
-        panelForm.setVisible(true);
+        if (showForm) {
+            if (nume != null) {
+                txtNume.setText(nume);
+            }
+
+            getContentPane().remove(panelButtons);
+            getContentPane().add(panelForm, BorderLayout.SOUTH);
+            panelForm.setVisible(true);
+        } else {
+            getContentPane().remove(panelForm);
+            getContentPane().add(panelButtons, BorderLayout.SOUTH);
+            panelForm.setVisible(false);
+            txtNume.setText("");
+        }
+
         revalidate();
         repaint();
     }
 
-    public void ascundeFormular() {
-        remove(panelForm);
-        add(panelButtons, BorderLayout.SOUTH);
-        panelForm.setVisible(false);
-        revalidate();
-        repaint();
-        txtNume.setText("");
-    }
-
-    public void setNume(String nume) {
-        txtNume.setText(nume);
-    }
-
+    @Override
     public String getNume() {
         return txtNume.getText();
     }
 
-    public void setAdaugaButtonListener(ActionListener listener) {
-        btnAdauga.addActionListener(listener);
+    @Override
+    public Object[] getTableSelection() {
+        int selectedRow = tableLanturi.getSelectedRow();
+        if (selectedRow == -1) {
+            return null;
+        }
+
+        Object[] rowData = new Object[tableModel.getColumnCount()];
+        for (int i = 0; i < rowData.length; i++) {
+            rowData[i] = tableModel.getValueAt(selectedRow, i);
+        }
+
+        return rowData;
     }
 
-    public void setEditareButtonListener(ActionListener listener) {
-        btnEditare.addActionListener(listener);
-    }
-
-    public void setStergereButtonListener(ActionListener listener) {
-        btnStergere.addActionListener(listener);
-    }
-
-    public void setInapoiButtonListener(ActionListener listener) {
-        btnInapoi.addActionListener(listener);
-    }
-
-    public void setSalveazaButtonListener(ActionListener listener) {
-        btnSalveaza.addActionListener(listener);
-    }
-
-    public void setAnuleazaButtonListener(ActionListener listener) {
-        btnAnuleaza.addActionListener(listener);
-    }
-
-    public void updateTable(Object[][] data) {
-        tableModel.setRowCount(0);
-        for (Object[] row : data) {
-            tableModel.addRow(row);
+    @Override
+    public void registerEventHandlers(Map<String, ActionListener> actionListeners) {
+        if (actionListeners != null) {
+            for (Map.Entry<String, ActionListener> entry : actionListeners.entrySet()) {
+                JButton button = buttonMap.get(entry.getKey());
+                if (button != null) {
+                    button.addActionListener(entry.getValue());
+                }
+            }
         }
     }
 
-    public int getSelectedRow() {
-        return tableLanturi.getSelectedRow();
-    }
-
-    public Object getValueAt(int row, int column) {
-        return tableModel.getValueAt(row, column);
-    }
-
-    public void showMessage(String message) {
-        JOptionPane.showMessageDialog(this, message);
-    }
-
-    public int showConfirmDialog(String message) {
-        return JOptionPane.showConfirmDialog(this, message, "Confirmare", JOptionPane.YES_NO_OPTION);
+    @Override
+    public void displayDialog(int dialogType, String message, Object initialValue) {
+        if (dialogType == JOptionPane.QUESTION_MESSAGE) {
+            JOptionPane.showConfirmDialog(this, message, "Confirmare", JOptionPane.YES_NO_OPTION, dialogType);
+        } else {
+            JOptionPane.showMessageDialog(this, message);
+        }
     }
 }

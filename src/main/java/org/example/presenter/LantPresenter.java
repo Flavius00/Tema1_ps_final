@@ -6,100 +6,117 @@ import org.example.view.LantGUI;
 import org.example.view.MainView;
 
 import java.awt.event.ActionEvent;
+import javax.swing.JOptionPane;
+import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LantPresenter {
-    private  LantGUI view;
+    private LantGUI view;
     private LantDAO lantDAO;
     private MainView mainView;
     private int currentLantId = -1;
     private boolean isEditMode = false;
-    private HotelPresenter hotelPresenter; // Added reference to HotelPresenter
+    private HotelPresenter hotelPresenter;
 
     public LantPresenter(LantGUI view, LantDAO lantDAO, MainView mainView) {
         this.view = view;
         this.lantDAO = lantDAO;
         this.mainView = mainView;
 
-        // Load initial data
         loadLanturi();
 
-        // Set up listeners
-        view.setAdaugaButtonListener(this::addLant);
-        view.setEditareButtonListener(this::editLant);
-        view.setStergereButtonListener(this::deleteLant);
-        view.setInapoiButtonListener(this::backToMain);
-        view.setSalveazaButtonListener(this::saveLant);
-        view.setAnuleazaButtonListener(e -> view.ascundeFormular());
+        Map<String, ActionListener> listeners = new HashMap<>();
+        listeners.put("add", this::addLant);
+        listeners.put("edit", this::editLant);
+        listeners.put("delete", this::deleteLant);
+        listeners.put("back", this::backToMain);
+        listeners.put("save", this::saveLant);
+        listeners.put("cancel", e -> view.updateComponents(null, false, null));
+
+        view.registerEventHandlers(listeners);
     }
 
-    // Add method to set HotelPresenter reference
+    private int showDialog(int dialogType, String message, Object initialValue) {
+        switch (dialogType) {
+            case JOptionPane.QUESTION_MESSAGE:
+                view.displayDialog(dialogType, message, initialValue);
+                return JOptionPane.YES_OPTION;
+
+            case JOptionPane.PLAIN_MESSAGE:
+                if (initialValue != null) {
+                    view.displayDialog(dialogType, message, initialValue);
+                    return 0;
+                }
+                break;
+
+            default:
+                view.displayDialog(dialogType, message, null);
+                return -1;
+        }
+        return -1;
+    }
+
     public void setHotelPresenter(HotelPresenter hotelPresenter) {
         this.hotelPresenter = hotelPresenter;
     }
 
     private void loadLanturi() {
         Object[][] lanturi = lantDAO.getLanturiAsObjects();
-        view.updateTable(lanturi);
+        view.updateComponents(lanturi, false, null);
     }
 
     private void addLant(ActionEvent e) {
         currentLantId = -1;
         isEditMode = false;
-        view.setNume("");
-        view.afiseazaFormular();
+        view.updateComponents(null, true, "");
     }
 
     private void editLant(ActionEvent e) {
-        int selectedRow = view.getSelectedRow();
-        if (selectedRow != -1) {
-            // Get data from selected row
-            currentLantId = (int) view.getValueAt(selectedRow, 0);
-            String nume = (String) view.getValueAt(selectedRow, 1);
-
-            // Set edit mode and populate form
-            isEditMode = true;
-            view.setNume(nume);
-            view.afiseazaFormular();
-        } else {
-            view.showMessage("Selectați un lanț hotelier pentru a-l modifica!");
+        Object[] rowData = view.getTableSelection();
+        if (rowData == null) {
+            showDialog(JOptionPane.ERROR_MESSAGE, "Selectați un lanț hotelier pentru a-l modifica!", null);
+            return;
         }
+
+        currentLantId = (int) rowData[0];
+        String nume = (String) rowData[1];
+
+        isEditMode = true;
+        view.updateComponents(null, true, nume);
     }
 
     private void saveLant(ActionEvent e) {
         String nume = view.getNume();
 
-        // Validate input
         if (nume == null || nume.trim().isEmpty()) {
-            view.showMessage("Numele lanțului hotelier nu poate fi gol!");
+            showDialog(JOptionPane.ERROR_MESSAGE, "Numele lanțului hotelier nu poate fi gol!", null);
             return;
         }
 
         boolean success;
         if (!isEditMode) {
-            // Add new
             success = lantDAO.save(nume);
             if (success) {
-                view.showMessage("Lanț hotelier adăugat cu succes!");
+                showDialog(JOptionPane.INFORMATION_MESSAGE, "Lanț hotelier adăugat cu succes!", null);
             } else {
-                view.showMessage("Eroare la adăugarea lanțului hotelier!");
+                showDialog(JOptionPane.ERROR_MESSAGE, "Eroare la adăugarea lanțului hotelier!", null);
             }
         } else {
-            // Update existing
             success = lantDAO.update(currentLantId, nume);
             if (success) {
-                view.showMessage("Lanț hotelier actualizat cu succes!");
+                showDialog(JOptionPane.INFORMATION_MESSAGE, "Lanț hotelier actualizat cu succes!", null);
             } else {
-                view.showMessage("Eroare la actualizarea lanțului hotelier!");
+                showDialog(JOptionPane.ERROR_MESSAGE, "Eroare la actualizarea lanțului hotelier!", null);
             }
         }
 
         if (success) {
-            view.ascundeFormular();
+            view.updateComponents(null, false, null);
             loadLanturi();
             currentLantId = -1;
             isEditMode = false;
 
-            // Notify HotelPresenter to refresh its dropdowns
             if (hotelPresenter != null) {
                 hotelPresenter.refreshLanturi();
             }
@@ -107,27 +124,27 @@ public class LantPresenter {
     }
 
     private void deleteLant(ActionEvent e) {
-        int selectedRow = view.getSelectedRow();
-        if (selectedRow != -1) {
-            int id = (int) view.getValueAt(selectedRow, 0);
-            int confirmResult = view.showConfirmDialog("Sigur doriți să ștergeți acest lanț hotelier?");
+        Object[] rowData = view.getTableSelection();
+        if (rowData == null) {
+            showDialog(JOptionPane.ERROR_MESSAGE, "Selectați un lanț hotelier pentru a-l șterge!", null);
+            return;
+        }
 
-            if (confirmResult == 0) { // Yes option
-                boolean success = lantDAO.delete(id);
-                if (success) {
-                    view.showMessage("Lanț hotelier șters cu succes!");
-                    loadLanturi();
+        int id = (int) rowData[0];
+        int confirmResult = showDialog(JOptionPane.QUESTION_MESSAGE, "Sigur doriți să ștergeți acest lanț hotelier?", null);
 
-                    // Notify HotelPresenter to refresh its dropdowns
-                    if (hotelPresenter != null) {
-                        hotelPresenter.refreshLanturi();
-                    }
-                } else {
-                    view.showMessage("Eroare la ștergerea lanțului hotelier! Verificați dacă există hoteluri asociate.");
+        if (confirmResult == JOptionPane.YES_OPTION) {
+            boolean success = lantDAO.delete(id);
+            if (success) {
+                showDialog(JOptionPane.INFORMATION_MESSAGE, "Lanț hotelier șters cu succes!", null);
+                loadLanturi();
+
+                if (hotelPresenter != null) {
+                    hotelPresenter.refreshLanturi();
                 }
+            } else {
+                showDialog(JOptionPane.ERROR_MESSAGE, "Eroare la ștergerea lanțului hotelier! Verificați dacă există hoteluri asociate.", null);
             }
-        } else {
-            view.showMessage("Selectați un lanț hotelier pentru a-l șterge!");
         }
     }
 

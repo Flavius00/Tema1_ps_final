@@ -12,7 +12,6 @@ public class MainView extends JFrame {
     private JButton btnCamere;
     private JButton btnRezervari;
 
-    // For panel management
     private JPanel cardPanel;
     private CardLayout cardLayout;
     private Map<String, JPanel> panels;
@@ -21,16 +20,13 @@ public class MainView extends JFrame {
     public MainView() {
         initComponents();
 
-        // Initialize panel management
         panels = new HashMap<>();
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
 
-        // Add the main panel first
         panels.put("main", mainPanel);
         cardPanel.add(mainPanel, "main");
 
-        // Set the main content pane to use card layout
         setContentPane(cardPanel);
     }
 

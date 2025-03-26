@@ -5,6 +5,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HotelView extends JPanel implements HotelGUI {
     private JTable hotelTable;
@@ -13,16 +15,16 @@ public class HotelView extends JPanel implements HotelGUI {
     private JTextField nameField, phoneField, emailField, facilitiesField;
     private JComboBox<String> lantComboBox;
     private JComboBox<String> locatieComboBox;
-    // Filtru pentru lant
     private JComboBox<String> filterChainComboBox;
     private JButton filterByChainButton;
     private JPanel formPanel;
     private JPanel buttonPanel;
 
+    private Map<String, JButton> buttonMap;
+
     public HotelView() {
         setLayout(new BorderLayout());
 
-        // Create filter panel
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         filterPanel.add(new JLabel("Filtrare după lanț:"));
         filterChainComboBox = new JComboBox<>();
@@ -33,7 +35,6 @@ public class HotelView extends JPanel implements HotelGUI {
 
         add(filterPanel, BorderLayout.NORTH);
 
-        // Create table
         String[] columnNames = {"ID", "Nume", "Locatie", "Telefon", "Email", "Facilitati", "Lant"};
         tableModel = new DefaultTableModel(columnNames, 0);
         hotelTable = new JTable(tableModel);
@@ -41,7 +42,6 @@ public class HotelView extends JPanel implements HotelGUI {
         JScrollPane scrollPane = new JScrollPane(hotelTable);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Create form panel
         formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -69,7 +69,6 @@ public class HotelView extends JPanel implements HotelGUI {
         lantComboBox = new JComboBox<>();
         formPanel.add(lantComboBox);
 
-        // Create button panel
         buttonPanel = new JPanel(new FlowLayout());
 
         addButton = new JButton("Adauga");
@@ -89,190 +88,141 @@ public class HotelView extends JPanel implements HotelGUI {
         southPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(southPanel, BorderLayout.SOUTH);
+
+        buttonMap = new HashMap<>();
+        buttonMap.put("add", addButton);
+        buttonMap.put("edit", editButton);
+        buttonMap.put("delete", deleteButton);
+        buttonMap.put("viewCameras", viewCamerasButton);
+        buttonMap.put("back", backButton);
+        buttonMap.put("filterByChain", filterByChainButton);
     }
 
-    // Simple accessor and mutator methods without logic
-
-    public void setButtonsEnabled(boolean add, boolean edit, boolean delete, boolean viewCameras) {
-        addButton.setEnabled(add);
-        editButton.setEnabled(edit);
-        deleteButton.setEnabled(delete);
-        viewCamerasButton.setEnabled(viewCameras);
-    }
-
-    public void addTableSelectionListener(ListSelectionListener listener) {
-        hotelTable.getSelectionModel().addListSelectionListener(listener);
-    }
-
-    public int getSelectedRow() {
-        return hotelTable.getSelectedRow();
-    }
-
-    public Object getValueAt(int row, int column) {
-        return tableModel.getValueAt(row, column);
-    }
-
-    public void populateHotelTable(Object[][] hotels) {
-        tableModel.setRowCount(0);
-        for (Object[] hotel : hotels) {
-            tableModel.addRow(hotel);
+    @Override
+    public void updateComponents(Object[][] tableData, Object[][] comboData, boolean[] buttonStates) {
+        if (tableData != null) {
+            tableModel.setRowCount(0);
+            for (Object[] row : tableData) {
+                tableModel.addRow(row);
+            }
         }
-    }
 
-    public void removeAllLocatieItems() {
-        locatieComboBox.removeAllItems();
-    }
-
-    public void removeAllLantItems() {
-        lantComboBox.removeAllItems();
-    }
-
-    public void addLocatieItem(String item) {
-        locatieComboBox.addItem(item);
-    }
-
-    public void addLantItem(String item) {
-        lantComboBox.addItem(item);
-
-        // Also add to filter combo box (except the "Selectați un lanț" item)
-        if (!item.equals("Selectați un lanț")) {
-            // Check if it already exists
-            boolean exists = false;
-            for (int i = 0; i < filterChainComboBox.getItemCount(); i++) {
-                if (filterChainComboBox.getItemAt(i).equals(item)) {
-                    exists = true;
-                    break;
+        if (comboData != null) {
+            if (comboData.length > 0 && comboData[0] != null) {
+                locatieComboBox.removeAllItems();
+                for (Object item : comboData[0]) {
+                    if (item != null) {
+                        locatieComboBox.addItem(item.toString());
+                    }
                 }
             }
-            if (!exists) {
-                filterChainComboBox.addItem(item);
+
+            if (comboData.length > 1 && comboData[1] != null) {
+                lantComboBox.removeAllItems();
+                filterChainComboBox.removeAllItems();
+                filterChainComboBox.addItem("Toate lanțurile");
+
+                for (Object item : comboData[1]) {
+                    if (item != null) {
+                        String itemStr = item.toString();
+                        lantComboBox.addItem(itemStr);
+                        if (!itemStr.equals("Selectați un lanț")) {
+                            filterChainComboBox.addItem(itemStr);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (buttonStates != null && buttonStates.length >= 4) {
+            addButton.setEnabled(buttonStates[0]);
+            editButton.setEnabled(buttonStates[1]);
+            deleteButton.setEnabled(buttonStates[2]);
+            viewCamerasButton.setEnabled(buttonStates[3]);
+        }
+    }
+
+    @Override
+    public Object[] getFormData() {
+        return new Object[] {
+                nameField.getText(),
+                phoneField.getText(),
+                emailField.getText(),
+                facilitiesField.getText(),
+                locatieComboBox.getSelectedItem(),
+                lantComboBox.getSelectedItem(),
+                filterChainComboBox.getSelectedItem()
+        };
+    }
+
+    @Override
+    public void setFormData(Object[] formData) {
+        if (formData == null) return;
+
+        if (formData.length > 0 && formData[0] != null) nameField.setText(formData[0].toString());
+        if (formData.length > 1 && formData[1] != null) phoneField.setText(formData[1].toString());
+        if (formData.length > 2 && formData[2] != null) emailField.setText(formData[2].toString());
+        if (formData.length > 3 && formData[3] != null) facilitiesField.setText(formData[3].toString());
+
+        if (formData.length > 4 && formData[4] instanceof Integer) {
+            int index = (Integer) formData[4];
+            if (index >= 0 && index < locatieComboBox.getItemCount()) {
+                locatieComboBox.setSelectedIndex(index);
+            }
+        }
+
+        if (formData.length > 5 && formData[5] instanceof Integer) {
+            int index = (Integer) formData[5];
+            if (index >= 0 && index < lantComboBox.getItemCount()) {
+                lantComboBox.setSelectedIndex(index);
+            }
+        }
+
+        if (formData.length > 6 && formData[6] instanceof Boolean && (Boolean)formData[6]) {
+            nameField.setText("");
+            phoneField.setText("");
+            emailField.setText("");
+            facilitiesField.setText("");
+            if (locatieComboBox.getItemCount() > 0) locatieComboBox.setSelectedIndex(0);
+            if (lantComboBox.getItemCount() > 0) lantComboBox.setSelectedIndex(0);
+        }
+    }
+
+    @Override
+    public Object[] getTableSelection() {
+        int selectedRow = hotelTable.getSelectedRow();
+        if (selectedRow == -1) {
+            return null;
+        }
+
+        Object[] rowData = new Object[tableModel.getColumnCount()];
+        for (int i = 0; i < rowData.length; i++) {
+            rowData[i] = tableModel.getValueAt(selectedRow, i);
+        }
+
+        return rowData;
+    }
+
+    @Override
+    public void registerEventHandlers(ListSelectionListener tableListener, Map<String, ActionListener> actionListeners) {
+        hotelTable.getSelectionModel().addListSelectionListener(tableListener);
+
+        if (actionListeners != null) {
+            for (Map.Entry<String, ActionListener> entry : actionListeners.entrySet()) {
+                JButton button = buttonMap.get(entry.getKey());
+                if (button != null) {
+                    button.addActionListener(entry.getValue());
+                }
             }
         }
     }
 
-    // Method to update filter chain combo box from lant combo box
-    public void updateFilterChainComboBox() {
-        // First clear all except "Toate lanțurile"
-        while (filterChainComboBox.getItemCount() > 1) {
-            filterChainComboBox.removeItemAt(1);
+    @Override
+    public void displayDialog(int dialogType, String message, Object initialValue) {
+        if (dialogType == JOptionPane.QUESTION_MESSAGE) {
+            JOptionPane.showConfirmDialog(this, message, "Confirmare", JOptionPane.YES_NO_OPTION, dialogType);
+        } else {
+            JOptionPane.showMessageDialog(this, message);
         }
-
-        // Then add all items from lantComboBox except "Selectați un lanț"
-        for (int i = 1; i < lantComboBox.getItemCount(); i++) {
-            String item = lantComboBox.getItemAt(i);
-            filterChainComboBox.addItem(item);
-        }
-    }
-
-    public void setLocatieSelectedIndex(int index) {
-        locatieComboBox.setSelectedIndex(index);
-    }
-
-    public void setLantSelectedIndex(int index) {
-        lantComboBox.setSelectedIndex(index);
-    }
-
-    public int getLocatieSelectedIndex() {
-        return locatieComboBox.getItemCount();
-    }
-
-    public int getLantSelectedIndex() {
-        return lantComboBox.getItemCount();
-    }
-
-    public String getLocatieSelectedItem() {
-        Object item = locatieComboBox.getSelectedItem();
-        return item != null ? item.toString() : "";
-    }
-
-    public String getLantSelectedItem() {
-        Object item = lantComboBox.getSelectedItem();
-        return item != null ? item.toString() : "";
-    }
-
-    public String getSelectedFilterChain() {
-        return (String) filterChainComboBox.getSelectedItem();
-    }
-
-    // Form field getters
-    public String getName() {
-        return nameField.getText();
-    }
-
-    public String getPhone() {
-        return phoneField.getText();
-    }
-
-    public String getEmail() {
-        return emailField.getText();
-    }
-
-    public String getFacilities() {
-        return facilitiesField.getText();
-    }
-
-    // Form field setters
-    public void setName(String name) {
-        nameField.setText(name);
-    }
-
-    public void setPhone(String phone) {
-        phoneField.setText(phone);
-    }
-
-    public void setEmail(String email) {
-        emailField.setText(email);
-    }
-
-    public void setFacilities(String facilities) {
-        facilitiesField.setText(facilities);
-    }
-
-    public void clearForm() {
-        nameField.setText("");
-        phoneField.setText("");
-        emailField.setText("");
-        facilitiesField.setText("");
-        locatieComboBox.setSelectedIndex(0);
-        lantComboBox.setSelectedIndex(0);
-    }
-
-    // Action listeners
-    public void addAddButtonListener(ActionListener listener) {
-        addButton.addActionListener(listener);
-    }
-
-    public void addEditButtonListener(ActionListener listener) {
-        editButton.addActionListener(listener);
-    }
-
-    public void addDeleteButtonListener(ActionListener listener) {
-        deleteButton.addActionListener(listener);
-    }
-
-    public void addViewCamerasButtonListener(ActionListener listener) {
-        viewCamerasButton.addActionListener(listener);
-    }
-
-    public void addBackButtonListener(ActionListener listener) {
-        backButton.addActionListener(listener);
-    }
-
-    public void addFilterByChainButtonListener(ActionListener listener) {
-        filterByChainButton.addActionListener(listener);
-    }
-
-    public void showMessage(String message) {
-        JOptionPane.showMessageDialog(this, message);
-    }
-
-    public int showConfirmDialog(String message) {
-        return JOptionPane.showConfirmDialog(
-                this,
-                message,
-                "Confirmare",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-        );
     }
 }

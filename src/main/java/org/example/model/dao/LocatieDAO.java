@@ -45,7 +45,6 @@ public class LocatieDAO {
             Locatie locatie = locatii.get(i);
             result[i][0] = locatie.getId();
 
-            // Create a display string that combines all location information
             String displayText = locatie.getOras() + ", " + locatie.getStrada() + " " +
                     locatie.getNumar() + ", " + locatie.getTara();
             result[i][1] = displayText;
