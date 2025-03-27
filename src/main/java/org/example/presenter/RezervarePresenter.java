@@ -3,8 +3,6 @@ package org.example.presenter;
 import org.example.model.dao.RezervareDAO;
 import org.example.model.entities.Rezervare;
 import org.example.view.MainView;
-import org.example.view.RezervareGUI;
-import org.example.view.RezervareView;
 
 import java.awt.event.ActionEvent;
 import java.time.LocalDate;

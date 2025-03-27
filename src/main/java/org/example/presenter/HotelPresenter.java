@@ -4,8 +4,6 @@ import org.example.model.dao.HotelDAO;
 import org.example.model.dao.LantDAO;
 import org.example.model.dao.LocatieDAO;
 import org.example.model.entities.Hotel;
-import org.example.view.HotelGUI;
-import org.example.view.HotelView;
 import org.example.view.MainView;
 
 import java.awt.event.ActionEvent;

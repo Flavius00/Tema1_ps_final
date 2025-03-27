@@ -1,8 +1,6 @@
 package org.example.presenter;
 
 import org.example.model.dao.LantDAO;
-import org.example.model.entities.Lant;
-import org.example.view.LantGUI;
 import org.example.view.MainView;
 
 import java.awt.event.ActionEvent;

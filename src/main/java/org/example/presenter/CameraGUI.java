@@ -1,4 +1,4 @@
-package org.example.view;
+package org.example.presenter;
 
 import javax.swing.event.ListSelectionListener;
 import java.awt.event.ActionListener;

@@ -4,8 +4,6 @@ import org.example.model.dao.CameraDAO;
 import org.example.model.dao.RezervareDAO;
 import org.example.model.entities.Camera;
 import org.example.util.ExportUtil;
-import org.example.view.CameraGUI;
-import org.example.view.CameraView;
 import org.example.view.MainView;
 
 import java.awt.event.ActionEvent;
