@@ -67,6 +67,7 @@ public class HotelPresenter {
         this.cameraPresenter = cameraPresenter;
     }
 
+
     // Method to refresh lanturi dropdown (called from LantPresenter)
     public void refreshLanturi() {
         loadLanturi();

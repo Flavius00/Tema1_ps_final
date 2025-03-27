@@ -55,9 +55,9 @@ public class Main {
         });
 
         // Add panels to main view
-        mainView.addPanel("hotel", hotelView);
-        mainView.addPanel("camera", cameraView);
-        mainView.addPanel("rezervare", rezervareView);
+        mainView.addPanel("hotel", (JPanel) hotelView);
+        mainView.addPanel("camera", (JPanel) cameraView);
+        mainView.addPanel("rezervare", (JPanel) rezervareView);
 
         // Display main view
         mainView.setVisible(true);
